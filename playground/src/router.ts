@@ -11,6 +11,11 @@ const routes = [
         name: 'Shapes',
         component: () => import('./pages/shapes.vue'),
     },
+    {
+        path: '/webgpu-renderer',
+        name: 'WebGPURenderer',
+        component: () => import('./pages/WebGPURenderer.vue'),
+    },
 ]
 export const router = createRouter({
     history: createWebHistory(),

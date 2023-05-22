@@ -1,6 +1,7 @@
 import { TresScene } from './TresScene'
 import { defineComponent, h } from 'vue'
 import { ColorSpace, ShadowMapType, ToneMapping } from 'three'
+import type { Renderer } from 'three'
 import { CameraType, useTresProvider } from '../composables'
 import { RendererPresetsType } from '../composables/useRenderer/const'
 import { Component } from 'vue'
@@ -21,6 +22,7 @@ export interface TresCanvasProps {
   preset?: RendererPresetsType
   disableRender?: boolean
   camera?: CameraType
+  customRenderer?: (canvas: any) => Renderer
 }
 /**
  * Vue component for rendering a Tres component.
@@ -44,6 +46,7 @@ export const TresCanvas = defineComponent<TresCanvasProps>({
     'preset',
     'disableRender',
     'camera',
+    'customRenderer',
   ] as unknown as undefined,
   setup(props, { slots, expose }) {
     const tres = useTresProvider()

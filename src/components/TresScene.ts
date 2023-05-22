@@ -1,6 +1,6 @@
 import { App, defineComponent, h, onMounted, onUnmounted, ref, watch, watchEffect, VNode } from 'vue'
-import * as THREE from 'three'
-import { ColorSpace, ShadowMapType, ToneMapping } from 'three'
+import { ColorSpace, Scene, ShadowMapType, ToneMapping } from 'three'
+import type { Renderer } from 'three'
 import { useEventListener } from '@vueuse/core'
 import { isString } from '@alvarosabu/utils'
 import { createTres } from '../core/renderer'
@@ -34,6 +34,7 @@ export interface TresSceneProps {
   preset?: RendererPresetsType
   disableRender?: boolean
   camera?: CameraType
+  customRenderer?: (canvas: any) => Renderer
 }
 /**
  * Vue component for rendering a Tres component.
@@ -59,6 +60,7 @@ export const TresScene = defineComponent<TresSceneProps>({
     'preset',
     'disableRender',
     'camera',
+    'customRenderer',
   ] as unknown as undefined,
   setup(props, { slots, expose }) {
     if (props.physicallyCorrectLights === true) {
@@ -67,7 +69,7 @@ export const TresScene = defineComponent<TresSceneProps>({
 
     const container = ref<HTMLElement>()
     const canvas = ref<HTMLElement>()
-    const scene = new THREE.Scene()
+    const scene = new Scene()
     const { setState } = useTres()
 
     setState('scene', scene)

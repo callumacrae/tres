@@ -18,7 +18,7 @@ import {
   Clock,
   ColorSpace,
 } from 'three'
-import type { ToneMapping } from 'three'
+import type { ToneMapping, Renderer } from 'three'
 import { useRenderLoop } from '../useRenderLoop'
 import { useTres } from '../useTres'
 import { normalizeColor } from '../../utils/normalize'
@@ -112,6 +112,14 @@ export interface UseRendererOptions extends WebGLRendererParameters {
   clearColor?: MaybeRefOrGetter<TresColor>
   windowSize?: MaybeRefOrGetter<boolean | string>
   preset?: RendererPresetsType
+
+  /**
+   * The renderer to use, if you don't want to use WebGLRenderer or if you want
+   * to provide your own instance.
+   *
+   * @default undefined
+   */
+  customRenderer?: (canvas: any) => Renderer
 }
 
 /**
@@ -121,7 +129,7 @@ export interface UseRendererOptions extends WebGLRendererParameters {
  * @param {UseRendererOptions} [options]
  */
 export function useRenderer(options: UseRendererOptions) {
-  const renderer = shallowRef<WebGLRenderer>()
+  const renderer = shallowRef<Renderer>()
   const isReady = ref(false)
   // Defaults
   const {
@@ -145,6 +153,7 @@ export function useRenderer(options: UseRendererOptions) {
     clearColor,
     windowSize = false,
     preset = undefined,
+    customRenderer = undefined,
   } = toRefs(options)
 
   const { state, setState } = useTres()
@@ -169,11 +178,13 @@ You could set windowSize=true to force the canvas to be the size of the window.`
     }
 
     renderer.value.setSize(width.value, height.value)
-    renderer.value.setPixelRatio(Math.min(pixelRatio.value, 2))
+    if ('setPixelRatio' in renderer.value && typeof renderer.value.setPixelRatio === 'function') {
+      renderer.value.setPixelRatio(Math.min(pixelRatio.value, 2))
+    }
   }
 
   const updateRendererOptions = () => {
-    if (!renderer.value) {
+    if (!renderer.value || !(renderer.value instanceof WebGLRenderer)) {
       return
     }
 
@@ -206,20 +217,25 @@ You could set windowSize=true to force the canvas to be the size of the window.`
       return
     }
 
-    renderer.value = new WebGLRenderer({
-      canvas: _canvas,
-      alpha: toValue(alpha),
-      antialias: toValue(antialias),
-      context: toValue(context),
-      depth: toValue(depth),
-      failIfMajorPerformanceCaveat: toValue(failIfMajorPerformanceCaveat),
-      logarithmicDepthBuffer: toValue(logarithmicDepthBuffer),
-      powerPreference: toValue(powerPreference),
-      precision: toValue(precision),
-      stencil: toValue(stencil),
-      preserveDrawingBuffer: toValue(preserveDrawingBuffer),
-      premultipliedAlpha: toValue(premultipliedAlpha),
-    })
+    const customRendererValue = toValue(customRenderer)
+    if (customRendererValue) {
+      renderer.value = customRendererValue(_canvas)
+    } else {
+      renderer.value = new WebGLRenderer({
+        canvas: _canvas,
+        alpha: toValue(alpha),
+        antialias: toValue(antialias),
+        context: toValue(context),
+        depth: toValue(depth),
+        failIfMajorPerformanceCaveat: toValue(failIfMajorPerformanceCaveat),
+        logarithmicDepthBuffer: toValue(logarithmicDepthBuffer),
+        powerPreference: toValue(powerPreference),
+        precision: toValue(precision),
+        stencil: toValue(stencil),
+        preserveDrawingBuffer: toValue(preserveDrawingBuffer),
+        premultipliedAlpha: toValue(premultipliedAlpha),
+      })
+    }
 
     setState('renderer', renderer.value)
     setState('clock', new Clock())
@@ -236,7 +252,9 @@ You could set windowSize=true to force the canvas to be the size of the window.`
       return
     }
 
-    renderer.value.dispose()
+    if ('dispose' in renderer.value && typeof renderer.value.dispose === 'function') {
+      renderer.value.dispose()
+    }
     renderer.value = undefined
 
     isReady.value = false
